@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
   web:
@@ -10,4 +10,4 @@ services:
     volumes:
       - ./:/home/app/webapp/
     env_file:
-      - .env
+      - viringo.env
