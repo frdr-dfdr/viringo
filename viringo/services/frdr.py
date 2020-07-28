@@ -72,8 +72,13 @@ def construct_datacite_xml(data):
 
     # Add resource URL as identifier
     identifier = ET.SubElement(resource, "identifier")
-    identifier.set("identifierType", "URL")
-    identifier.text = data['item_url']
+    if "doi.org/" in data['item_url']:
+        identifier.set("identifierType", "DOI")
+        identifier.text = data['item_url'].split("doi.org/")[1]
+    else:
+        identifier.set("identifierType", "URL")
+        identifier.text = data['item_url']
+
 
     # Add creators
     creators = ET.SubElement(resource, "creators")
@@ -82,10 +87,18 @@ def construct_datacite_xml(data):
         creatorName = ET.SubElement(creator, "creatorName")
         creatorName.text = creator_entry
 
-    # Add title
+    # Add titles
     titles = ET.SubElement(resource, "titles")
-    title = ET.SubElement(titles, "title")
-    title.text = data['title']
+    if data['title_en'] != "":
+        title = ET.SubElement(titles, "title")
+        title.text = data['title_en']
+        title.set("xml:lang", "en")
+    if data['title_fr'] != "":
+        title = ET.SubElement(titles, "title")
+        title.text = data['title_fr']
+        title.set("xml:lang", "fr")
+        if data['title_en'] != "":
+            title.set("titleType", "TranslatedTitle")
 
     # Add publisher
     publisher = ET.SubElement(resource, "publisher")
@@ -98,18 +111,54 @@ def construct_datacite_xml(data):
     # Add subjects
     subject_and_tags = []
     subjects = ET.SubElement(resource, "subjects")
-    for subject_entry in data['dc:subject'] + data['frdr:tags'] + data['frdr:tags_fr']:
-        if subject_entry not in subject_and_tags:
+    for subject_entry in data['frdr:category_en']:
+        if subject_entry not in subject_and_tags and subject_entry != "":
             subject_and_tags.append(subject_entry)
             subject = ET.SubElement(subjects, "subject")
+            subject.set("xml:lang", "en")
+            subject.text = subject_entry
+    for subject_entry in data['frdr:category_fr']:
+        if subject_entry not in subject_and_tags and subject_entry != "":
+            subject_and_tags.append(subject_entry)
+            subject = ET.SubElement(subjects, "subject")
+            subject.set("xml:lang", "fr")
+            subject.text = subject_entry
+    for subject_entry in data['frdr:keywords_en']:
+        if subject_entry not in subject_and_tags and subject_entry != "":
+            subject_and_tags.append(subject_entry)
+            subject = ET.SubElement(subjects, "subject")
+            subject.set("xml:lang", "en")
+            subject.text = subject_entry
+    for subject_entry in data['frdr:keywords_fr']:
+        if subject_entry not in subject_and_tags and subject_entry != "":
+            subject_and_tags.append(subject_entry)
+            subject = ET.SubElement(subjects, "subject")
+            subject.set("xml:lang", "fr")
             subject.text = subject_entry
 
-    # Add FRDR as HostingInstituton
+    # If subjects is empty, remove it
+    if len(subjects) == 0:
+        resource.remove(subjects)
+
+    # Add contributors (contributorType "Other")
     contributors = ET.SubElement(resource, "contributors")
-    contributor = ET.SubElement(contributors, "contributor")
-    contributor.set("contributorType", "HostingInstitution")
-    contributorName = ET.SubElement(contributor, "contributorName")
-    contributorName.text = "Federated Research Data Repository / dépôt fédéré de données de recherche"
+    for contributor_entry in data["dc:contributor"]:
+        contributor = ET.SubElement(contributors, "contributor")
+        contributor.set("contributorType", "Other")
+        contributorName = ET.SubElement(contributor, "contributorName")
+        contributorName.text = contributor_entry
+
+    # Add FRDR as HostingInstituton
+    contributor_en = ET.SubElement(contributors, "contributor")
+    contributor_en.set("contributorType", "HostingInstitution")
+    contributor_en.set("xml:lang", "en")
+    contributorName_en = ET.SubElement(contributor_en, "contributorName")
+    contributorName_en.text = "Federated Research Data Repository"
+    contributor_fr = ET.SubElement(contributors, "contributor")
+    contributor_fr.set("contributorType", "HostingInstitution")
+    contributor_fr.set("xml:lang", "fr")
+    contributorName_fr = ET.SubElement(contributor_fr, "contributorName")
+    contributorName_fr.text = "Dépôt fédéré de données de recherche"
 
     # Add dates
     dates = ET.SubElement(resource, "dates")
@@ -130,23 +179,37 @@ def construct_datacite_xml(data):
 
     # Add rightsList
     rightsList = ET.SubElement(resource, "rightsList")
-    for rights_entry in data['dc:rights'] + data['frdr:access']:
+    for rights_entry in data['dc:rights']:
         if rights_entry != '':
             rights = ET.SubElement(rightsList, "rights")
             rights.text = rights_entry
             if "http" in rights_entry:
                 rights.set("rightsURI", rights_entry[rights_entry.find("http"):].strip())
                 rights.text = rights_entry[:rights_entry.find("http")].strip()
-    # If rightsList is empty, remove it
-    if len(rightsList) == 0:
-        resource.remove(rightsList)
+    if len(data["frdr:access"]) > 0:
+        for access_entry in data["frdr:access"]:
+            rights = ET.SubElement(rightsList, "rights")
+            if access_entry == "Public":
+                rights.text = "info:eu-repo/semantics/openAccess"
+            else:
+                rights.text = "info:eu-repo/semantics/restrictedAccess"
+    else: # Assume Public/openAccess
+        rights = ET.SubElement(rightsList, "rights")
+        rights.text = "info:eu-repo/semantics/openAccess"
 
     # Add description(s)
     descriptions = ET.SubElement(resource, "descriptions")
-    for description_entry in data['dc:description'] + data['frdr:description_fr']:
+    for description_entry in data['dc:description_en']:
         if description_entry != "":
             description = ET.SubElement(descriptions, "description")
             description.set("descriptionType", "Abstract")
+            description.set("xml:lang", "en")
+            description.text = description_entry
+    for description_entry in data['dc:description_fr']:
+        if description_entry != "":
+            description = ET.SubElement(descriptions, "description")
+            description.set("descriptionType", "Abstract")
+            description.set("xml:lang", "fr")
             description.text = description_entry
 
     # Add series (series)
@@ -166,7 +229,9 @@ def build_metadata(data):
     """Parse single FRDR result into metadata object"""
     result = Metadata()
 
-    result.identifier = "oai:" + data['item_url'] # Add oai: to identifier URL
+    # Construct identifier compliant with OAI spec
+    namespace = data['repo_oai_name']
+    result.identifier = "oai:" + namespace + ":" + data['local_identifier']
 
     # Here we want to parse a ISO date but convert to UTC and then remove the TZinfo entirely
     # This is because OAI always works in UTC.
@@ -177,17 +242,16 @@ def build_metadata(data):
 
     result.xml = construct_datacite_xml(data)
     result.metadata_version = None
-    result.titles = [data['title']]
+    result.titles = [data['title_en'], data['title_fr']]
     result.creators = data['dc:contributor.author']
     result.subjects = []
 
     # De-duplicate subjects and tags
-    for subject in data['dc:subject'] + data['frdr:tags'] + data['frdr:tags_fr']:
+    for subject in data['frdr:category_en'] + data['frdr:category_fr'] + data['frdr:keywords_en'] + data['frdr:keywords_fr']:
         if subject not in result.subjects:
             result.subjects.append(subject)
 
-    # TODO: Add French description
-    result.descriptions = data['dc:description']
+    result.descriptions = data['dc:description_en'] + data['dc:description_fr']
     result.publisher = data['dc:publisher']
     result.publication_year = dateutil.parser.parse(data['pub_date']).year
     result.dates = [data['pub_date']]
@@ -197,14 +261,12 @@ def build_metadata(data):
     result.geo_locations = data['frdr:geospatial']
     result.resource_types = ['Dataset']
     result.formats = []
-    result.identifiers = []
+    result.identifiers = [data['item_url']]
     result.language = ''
     result.relations = []
     result.rights = data['dc:rights']
-    result.client = data['homepage_url']
+    result.client = data['repo_oai_name']
     result.active = True
-
-    result.identifiers.append(data['item_url'])
 
     return result
 
@@ -229,7 +291,7 @@ def assemble_record(record, db, user, password, server, port):
     if int(record["deleted"]) == 1:
         return None
 
-    if (len(record['title']) == 0):
+    if (len(record['title_en']) == 0 and len(record['title_fr']) == 0):
         return None
 
     con = psycopg2.connect("dbname='%s' user='%s' password='%s' host='%s' port='%s'" % (db, user, password, server, port))
@@ -267,8 +329,11 @@ def assemble_record(record, db, user, password, server, port):
         lookup_cur.execute("""SELECT creators.creator FROM creators JOIN records_x_creators on records_x_creators.creator_id = creators.creator_id WHERE records_x_creators.record_id=%s AND records_x_creators.is_contributor=1 order by records_x_creators_id asc""", [record["record_id"]])
         record["dc:contributor"] = rows_to_dict(lookup_cur)
 
-        lookup_cur.execute("""SELECT subjects.subject FROM subjects JOIN records_x_subjects on records_x_subjects.subject_id = subjects.subject_id WHERE records_x_subjects.record_id=%s""", [record["record_id"]])
-        record["dc:subject"] = rows_to_dict(lookup_cur)
+        lookup_cur.execute("""SELECT subjects.subject FROM subjects JOIN records_x_subjects on records_x_subjects.subject_id = subjects.subject_id WHERE records_x_subjects.record_id=%s and subjects.language = 'en' """, [record["record_id"]])
+        record["frdr:category_en"] = rows_to_dict(lookup_cur)
+
+        lookup_cur.execute("""SELECT subjects.subject FROM subjects JOIN records_x_subjects on records_x_subjects.subject_id = subjects.subject_id WHERE records_x_subjects.record_id=%s and subjects.language = 'fr' """, [record["record_id"]])
+        record["frdr:category_fr"] = rows_to_dict(lookup_cur)
 
         lookup_cur.execute("""SELECT publishers.publisher FROM publishers JOIN records_x_publishers on records_x_publishers.publisher_id = publishers.publisher_id WHERE records_x_publishers.record_id=%s""", [record["record_id"]])
         record["dc:publisher"] = rows_to_dict(lookup_cur)
@@ -277,16 +342,16 @@ def assemble_record(record, db, user, password, server, port):
         record["dc:rights"] = rows_to_dict(lookup_cur)
 
         lookup_cur.execute("SELECT description FROM descriptions WHERE record_id=%s and language='en' ", [record["record_id"]])
-        record["dc:description"] = rows_to_dict(lookup_cur)
+        record["dc:description_en"] = rows_to_dict(lookup_cur)
 
         lookup_cur.execute("SELECT description FROM descriptions WHERE record_id=%s and language='fr' ", [record["record_id"]])
-        record["frdr:description_fr"] = rows_to_dict(lookup_cur)
+        record["dc:description_fr"] = rows_to_dict(lookup_cur)
 
         lookup_cur.execute("""SELECT tags.tag FROM tags JOIN records_x_tags on records_x_tags.tag_id = tags.tag_id WHERE records_x_tags.record_id=%s and tags.language = 'en' """, [record["record_id"]])
-        record["frdr:tags"] = rows_to_dict(lookup_cur)
+        record["frdr:keywords_en"] = rows_to_dict(lookup_cur)
 
         lookup_cur.execute("""SELECT tags.tag FROM tags JOIN records_x_tags on records_x_tags.tag_id = tags.tag_id WHERE records_x_tags.record_id=%s and tags.language = 'fr' """, [record["record_id"]])
-        record["frdr:tags_fr"] = rows_to_dict(lookup_cur)
+        record["frdr:keywords_fr"] = rows_to_dict(lookup_cur)
 
         lookup_cur.execute("""SELECT access.access FROM access JOIN records_x_access on records_x_access.access_id = access.access_id WHERE records_x_access.record_id=%s""", [record["record_id"]])
         record["frdr:access"] = rows_to_dict(lookup_cur)
@@ -310,9 +375,9 @@ def get_metadata_list(
     records_con = psycopg2.connect("dbname='%s' user='%s' password='%s' host='%s' port='%s'" % (db, user, password, server, port))
     with records_con:
         db_cursor = records_con.cursor()
-    records_sql = """SELECT recs.record_id, recs.title, recs.pub_date, recs.contact, recs.series, recs.source_url, recs.item_url, recs.deleted, recs.local_identifier, recs.modified_timestamp, repos.repository_url, repos.repository_name, repos.repository_thumbnail, repos.item_url_pattern, repos.last_crawl_timestamp, repos.homepage_url FROM records recs, repositories repos WHERE recs.repository_id = repos.repository_id"""
+    records_sql = """SELECT recs.record_id, recs.title, recs.title_fr, recs.pub_date, recs.series, recs.source_url, recs.item_url, recs.deleted, recs.local_identifier, recs.modified_timestamp, repos.repository_url, repos.repository_name, repos.repository_thumbnail, repos.item_url_pattern, repos.last_crawl_timestamp, repos.homepage_url, repos.repo_oai_name FROM records recs, repositories repos WHERE recs.repository_id = repos.repository_id"""
     if set is not None and set != 'openaire_data':
-        records_sql = records_sql + " AND (repos.homepage_url='" + set + "')"
+        records_sql = records_sql + " AND (repos.repo_oai_name='" + set + "')"
     if from_datetime is not None:
         records_sql = records_sql + " AND recs.pub_date>='" + from_datetime + "'"
     if until_datetime is not None:
@@ -325,27 +390,34 @@ def get_metadata_list(
 
     results = []
     for row in record_set:
-        record = (dict(zip(['record_id', 'title', 'pub_date', 'contact', 'series', 'source_url', 'item_url', 'deleted', 'local_identifier', 'modified_timestamp', 'repository_url', 'repository_name', 'repository_thumbnail', 'item_url_pattern', 'last_crawl_timestamp', 'homepage_url'], row)))
+        record = (dict(zip(['record_id', 'title_en', 'title_fr', 'pub_date', 'series', 'source_url', 'item_url', 'deleted', 'local_identifier', 'modified_timestamp', 'repository_url', 'repository_name', 'repository_thumbnail', 'item_url_pattern', 'last_crawl_timestamp', 'homepage_url', 'repo_oai_name'], row)))
 
         full_record = assemble_record(record, db, user, password, server, port)
         if full_record is not None:
             results.append(build_metadata(full_record))
 
-    return results, db_cursor.rowcount, len(record_set)
+    if cursor is not None:
+        return results, db_cursor.rowcount, (len(record_set) + int(cursor))
+    else:
+        return results, db_cursor.rowcount, len(record_set)
 
 
 def get_metadata(identifier, db, user, password, server, port):
+    identifier = identifier[4:]
+    namespace = identifier[:identifier.find(":")]
+    local_identifier = identifier[identifier.find(":")+1:]
     records_con = psycopg2.connect("dbname='%s' user='%s' password='%s' host='%s' port='%s'" % (db, user, password, server, port))
     with records_con:
         records_cursor = records_con.cursor()
-    records_sql = ("""SELECT recs.record_id, recs.title, recs.pub_date, recs.contact, recs.series, recs.source_url, 
+    records_sql = ("""SELECT recs.record_id, recs.title, recs.title_fr, recs.pub_date, recs.series, recs.source_url, 
     recs.item_url, recs.deleted, recs.local_identifier, recs.modified_timestamp, repos.repository_url, 
     repos.repository_name, repos.repository_thumbnail, repos.item_url_pattern, repos.last_crawl_timestamp, 
-    repos.homepage_url FROM records recs, repositories repos 
-    WHERE recs.repository_id = repos.repository_id AND recs.item_url =\'""" + identifier[4:] + "\'")  # use identifier substring excluding oai: prefix
+    repos.homepage_url, repos.repo_oai_name FROM records recs, repositories repos 
+    WHERE recs.repository_id = repos.repository_id 
+        AND recs.local_identifier =\'""" + local_identifier + "\'" + "AND repos.repo_oai_name=\'""" + namespace + "\'")
     records_cursor.execute(records_sql)
     row = records_cursor.fetchone()
-    record = (dict(zip(['record_id', 'title', 'pub_date', 'contact', 'series', 'source_url', 'item_url', 'deleted', 'local_identifier', 'modified_timestamp', 'repository_url', 'repository_name', 'repository_thumbnail', 'item_url_pattern', 'last_crawl_timestamp', 'homepage_url'], row)))
+    record = (dict(zip(['record_id', 'title_en', 'title_fr', 'pub_date', 'series', 'source_url', 'item_url', 'deleted', 'local_identifier', 'modified_timestamp', 'repository_url', 'repository_name', 'repository_thumbnail', 'item_url_pattern', 'last_crawl_timestamp', 'homepage_url', 'repo_oai_name'], row)))
 
     full_record = assemble_record(record, db, user, password, server, port)
     return build_metadata(full_record)
@@ -359,7 +431,7 @@ def get_sets(db, user, password, server, port):
     results = []
     results.append(['openaire_data', 'OpenAIRE'])
 
-    repos_cursor.execute("SELECT homepage_url, repository_name from repositories")
+    repos_cursor.execute("SELECT repo_oai_name, repository_name from repositories")
     results.extend(repos_cursor.fetchall())
 
     return results, len(results)
