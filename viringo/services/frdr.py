@@ -230,8 +230,9 @@ def build_metadata(data):
     result = Metadata()
 
     # Construct identifier compliant with OAI spec
-    namespace = data['repo_oai_name']
-    result.identifier = "oai:" + namespace + ":" + data['local_identifier']
+    if not data['repo_oai_name'] or not data['local_identifier']:
+        return None
+    result.identifier = "oai:" + data['repo_oai_name'] + ":" + data['local_identifier']
 
     # Here we want to parse a ISO date but convert to UTC and then remove the TZinfo entirely
     # This is because OAI always works in UTC.
