@@ -305,7 +305,7 @@ class FRDROAIServer():
             <scheme>oai</scheme>
             <repositoryIdentifier>""" + config.OAIPMH_IDENTIFIER + """</repositoryIdentifier>
             <delimiter>:</delimiter>
-            <sampleIdentifier>oai""" + config.OAIPMH_IDENTIFIER + """:1</sampleIdentifier>
+            <sampleIdentifier>oai:""" + config.OAIPMH_IDENTIFIER + """:1</sampleIdentifier>
         </oai-identifier>
         """
 
