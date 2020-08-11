@@ -190,12 +190,12 @@ def construct_datacite_xml(data):
         for access_entry in data["frdr:access"]:
             rights = ET.SubElement(rightsList, "rights")
             if access_entry == "Public":
-                rights.text = "info:eu-repo/semantics/openAccess"
+                rights.set("rightsURI", "info:eu-repo/semantics/openAccess")
             else:
-                rights.text = "info:eu-repo/semantics/restrictedAccess"
+                rights.set("rightsURI", "info:eu-repo/semantics/restrictedAccess")
     else: # Assume Public/openAccess
         rights = ET.SubElement(rightsList, "rights")
-        rights.text = "info:eu-repo/semantics/openAccess"
+        rights.set("rightsURI", "info:eu-repo/semantics/openAccess")
 
     # Add description(s)
     descriptions = ET.SubElement(resource, "descriptions")
@@ -376,7 +376,7 @@ def get_metadata_list(
     records_con = psycopg2.connect("dbname='%s' user='%s' password='%s' host='%s' port='%s'" % (db, user, password, server, port))
     with records_con:
         db_cursor = records_con.cursor()
-    records_sql = """SELECT recs.record_id, recs.title, recs.title_fr, recs.pub_date, recs.series, recs.source_url, recs.item_url, recs.deleted, recs.local_identifier, recs.modified_timestamp, repos.repository_url, repos.repository_name, repos.repository_thumbnail, repos.item_url_pattern, repos.last_crawl_timestamp, repos.homepage_url, repos.repo_oai_name FROM records recs, repositories repos WHERE recs.repository_id = repos.repository_id"""
+    records_sql = """SELECT recs.record_id, recs.title, recs.title_fr, recs.pub_date, recs.series, recs.source_url, recs.item_url, recs.deleted, recs.local_identifier, recs.modified_timestamp, repos.repository_url, repos.repository_name, repos.repository_thumbnail, repos.item_url_pattern, repos.last_crawl_timestamp, repos.homepage_url, repos.repo_oai_name FROM records recs, repositories repos WHERE recs.repository_id = repos.repository_id AND recs.pub_date!=''"""
     if set is not None and set != 'openaire_data':
         records_sql = records_sql + " AND (repos.repo_oai_name='" + set + "')"
     if from_datetime is not None:
