@@ -66,6 +66,12 @@
             "index": "pypi",
             "version": "==1.1.1"
         },
+        "ftfy": {
+            "hashes": [
+                "sha256:51c7767f8c4b47d291fcef30b9625fb5341c06a31e6a3b627039c706c42f3720"
+            ],
+            "version": "==5.8"
+        },
         "idna": {
             "hashes": [
                 "sha256:c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407",
@@ -272,6 +278,13 @@
                 "sha256:6dc65cf9091cf750012f56f2cad759fa9e879f511b5ff8685e456b4e3bf90d16"
             ],
             "version": "==1.0.0"
+        },
+        "wcwidth": {
+            "hashes": [
+                "sha256:c4d647b99872929fdb7bdcaa4fbe7f01413ed3d98077df798530e5b04f116c83",
+                "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"
+            ],
+            "version": "==0.2.5"
         }
     },
     "develop": {
