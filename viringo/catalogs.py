@@ -374,6 +374,7 @@ class FRDROAIServer():
             set=None,
             paging_cursor=None
         ):
+
         #pylint: disable=no-self-use,invalid-name
         """Returns pyoai data tuple for list of records"""
 
@@ -392,6 +393,9 @@ class FRDROAIServer():
             until_datetime=until,
             cursor=paging_cursor
         )
+
+        if paging_cursor >= total_records:
+            paging_cursor = None
 
         records = []
         if results:
