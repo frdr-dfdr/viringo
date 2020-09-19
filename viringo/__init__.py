@@ -40,7 +40,7 @@ def create_app(test_config=None):
 
     @app.route('/')
     def index():
-        return redirect(url_for('oai.index', _external=True, _scheme='https'))
+        return redirect(url_for('oai.index'))
 
     # Register heartbeat
     @app.route('/heartbeat')
