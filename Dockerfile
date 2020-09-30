@@ -5,12 +5,8 @@ FROM phusion/passenger-full:1.0.11
 CMD ["/sbin/my_init"]
 
 # Update installed APT packages
-#RUN apt-get update && apt-get upgrade -y -o Dpkg::Options::="--force-confold" && \
-#    apt-get install -y ntp pandoc
-RUN apt-get update && \
-    apt-get install -y \
-    ntp \
-    pandoc
+RUN apt-get update && apt-get upgrade -y -o Dpkg::Options::="--force-confold" && \
+    apt-get install -y ntp pandoc
 
 # Fetch PIP install script and run
 ADD "https://bootstrap.pypa.io/get-pip.py" /tmp/get-pip.py
