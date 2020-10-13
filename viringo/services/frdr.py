@@ -7,6 +7,7 @@ import dateutil.parser
 import dateutil.tz
 from viringo import config
 import xml.etree.cElementTree as ET
+import ftfy
 
 class Metadata:
     """Represents a DataCite metadata resultset"""
@@ -63,6 +64,13 @@ class Metadata:
         self.client = client
         self.active = active
 
+def xml_fix_text(text):
+    if isinstance(text, str) and len(text) > 0:
+        text = text.replace('\x0c', " ")
+        return ftfy.fix_text(text)
+    else:
+        return ''
+
 def construct_datacite_xml(data):
     resource = ET.Element("resource")
     resource.set("xmlns", "http://datacite.org/schema/kernel-4")
@@ -74,10 +82,10 @@ def construct_datacite_xml(data):
     identifier = ET.SubElement(resource, "identifier")
     if "doi.org/" in data['item_url']:
         identifier.set("identifierType", "DOI")
-        identifier.text = data['item_url'].split("doi.org/")[1]
+        identifier.text = xml_fix_text(data['item_url'].split("doi.org/")[1])
     else:
         identifier.set("identifierType", "URL")
-        identifier.text = data['item_url']
+        identifier.text = xml_fix_text(data['item_url'])
 
 
     # Add creators
@@ -85,28 +93,28 @@ def construct_datacite_xml(data):
     for creator_entry in data['dc:contributor.author']:
         creator = ET.SubElement(creators, "creator")
         creatorName = ET.SubElement(creator, "creatorName")
-        creatorName.text = creator_entry
+        creatorName.text = xml_fix_text(creator_entry)
 
     # Add titles
     titles = ET.SubElement(resource, "titles")
     if data['title_en'] != "":
         title = ET.SubElement(titles, "title")
-        title.text = data['title_en']
+        title.text = xml_fix_text(data['title_en'])
         title.set("xml:lang", "en")
     if data['title_fr'] != "":
         title = ET.SubElement(titles, "title")
-        title.text = data['title_fr']
+        title.text = xml_fix_text(data['title_fr'])
         title.set("xml:lang", "fr")
         if data['title_en'] != "":
             title.set("titleType", "TranslatedTitle")
 
     # Add publisher
     publisher = ET.SubElement(resource, "publisher")
-    publisher.text = data['repository_name']
+    publisher.text = xml_fix_text(data['repository_name'])
 
     # Add publication year
     publicationyear = ET.SubElement(resource, "publicationYear")
-    publicationyear.text = data['pub_date'][:4]
+    publicationyear.text = xml_fix_text(data['pub_date'][:4])
 
     # Add subjects
     subject_and_tags = []
@@ -116,25 +124,25 @@ def construct_datacite_xml(data):
             subject_and_tags.append(subject_entry)
             subject = ET.SubElement(subjects, "subject")
             subject.set("xml:lang", "en")
-            subject.text = subject_entry
+            subject.text = xml_fix_text(subject_entry)
     for subject_entry in data['frdr:category_fr']:
         if subject_entry not in subject_and_tags and subject_entry != "":
             subject_and_tags.append(subject_entry)
             subject = ET.SubElement(subjects, "subject")
             subject.set("xml:lang", "fr")
-            subject.text = subject_entry
+            subject.text = xml_fix_text(subject_entry)
     for subject_entry in data['frdr:keywords_en']:
         if subject_entry not in subject_and_tags and subject_entry != "":
             subject_and_tags.append(subject_entry)
             subject = ET.SubElement(subjects, "subject")
             subject.set("xml:lang", "en")
-            subject.text = subject_entry
+            subject.text = xml_fix_text(subject_entry)
     for subject_entry in data['frdr:keywords_fr']:
         if subject_entry not in subject_and_tags and subject_entry != "":
             subject_and_tags.append(subject_entry)
             subject = ET.SubElement(subjects, "subject")
             subject.set("xml:lang", "fr")
-            subject.text = subject_entry
+            subject.text = xml_fix_text(subject_entry)
 
     # If subjects is empty, remove it
     if len(subjects) == 0:
@@ -146,7 +154,7 @@ def construct_datacite_xml(data):
         contributor = ET.SubElement(contributors, "contributor")
         contributor.set("contributorType", "Other")
         contributorName = ET.SubElement(contributor, "contributorName")
-        contributorName.text = contributor_entry
+        contributorName.text = xml_fix_text(contributor_entry)
 
     # Add FRDR as HostingInstituton
     contributor_en = ET.SubElement(contributors, "contributor")
@@ -164,7 +172,7 @@ def construct_datacite_xml(data):
     dates = ET.SubElement(resource, "dates")
     date = ET.SubElement(dates, "date")
     date.set("dateType", "Issued")
-    date.text = data['pub_date']
+    date.text = xml_fix_text(data['pub_date'])
 
     # Add resourceType
     resourceType = ET.SubElement(resource, "resourceType")
@@ -175,17 +183,17 @@ def construct_datacite_xml(data):
     alternateIdentifiers = ET.SubElement(resource, "alternateIdentifiers")
     alternateIdentifier = ET.SubElement(alternateIdentifiers, "alternateIdentifier")
     alternateIdentifier.set("alternateIdentifierType", "local")
-    alternateIdentifier.text = data['local_identifier']
+    alternateIdentifier.text = xml_fix_text(data['local_identifier'])
 
     # Add rightsList
     rightsList = ET.SubElement(resource, "rightsList")
     for rights_entry in data['dc:rights']:
         if rights_entry != '':
             rights = ET.SubElement(rightsList, "rights")
-            rights.text = rights_entry
+            rights.text = xml_fix_text(rights_entry)
             if "http" in rights_entry:
                 rights.set("rightsURI", rights_entry[rights_entry.find("http"):].strip())
-                rights.text = rights_entry[:rights_entry.find("http")].strip()
+                rights.text = xml_fix_text(rights_entry[:rights_entry.find("http")].strip())
     if len(data["frdr:access"]) > 0:
         for access_entry in data["frdr:access"]:
             rights = ET.SubElement(rightsList, "rights")
@@ -204,19 +212,19 @@ def construct_datacite_xml(data):
             description = ET.SubElement(descriptions, "description")
             description.set("descriptionType", "Abstract")
             description.set("xml:lang", "en")
-            description.text = description_entry
+            description.text = xml_fix_text(description_entry)
     for description_entry in data['dc:description_fr']:
         if description_entry != "":
             description = ET.SubElement(descriptions, "description")
             description.set("descriptionType", "Abstract")
             description.set("xml:lang", "fr")
-            description.text = description_entry
+            description.text = xml_fix_text(description_entry)
 
     # Add series (series)
     if data['series'] != "":
         description_series = ET.SubElement(descriptions, "description")
         description_series.set("descriptionType", "SeriesInformation")
-        description_series.text = data['series']
+        description_series.text = xml_fix_text(data['series'])
 
     # If descriptions is empty, remove it
     if len(descriptions) == 0:
@@ -253,7 +261,7 @@ def build_metadata(data):
             result.subjects.append(subject)
 
     result.descriptions = data['dc:description_en'] + data['dc:description_fr']
-    result.publisher = data['dc:publisher']
+    result.publisher = data['repository_name']
     result.publication_year = dateutil.parser.parse(data['pub_date']).year
     result.dates = [data['pub_date']]
     result.contributors = data['dc:contributor']
@@ -268,6 +276,20 @@ def build_metadata(data):
     result.rights = data['dc:rights']
     result.client = data['repo_oai_name']
     result.active = True
+
+    # Add openAccess or restrictedAccess indicator to dc:rights
+    if len(data["frdr:access"]) > 0:
+        for access_entry in data["frdr:access"]:
+            # If Public in frdr:access, use openAccess
+            if access_entry == "Public":
+                result.rights.append("openAccess")
+                break
+        if "openAccess" not in result.rights:
+            # If there are access values and none are Public, use restrictedAccess
+            result.rights.append("restrictedAccess")
+    else:
+        # If not indicated, assume Public/openAccess
+        result.rights.append("openAccess")
 
     return result
 
@@ -376,7 +398,12 @@ def get_metadata_list(
     records_con = psycopg2.connect("dbname='%s' user='%s' password='%s' host='%s' port='%s'" % (db, user, password, server, port))
     with records_con:
         db_cursor = records_con.cursor()
-    records_sql = """SELECT recs.record_id, recs.title, recs.title_fr, recs.pub_date, recs.series, recs.source_url, recs.item_url, recs.deleted, recs.local_identifier, recs.modified_timestamp, repos.repository_url, repos.repository_name, repos.repository_thumbnail, repos.item_url_pattern, repos.last_crawl_timestamp, repos.homepage_url, repos.repo_oai_name, count(*) OVER() AS full_count FROM records recs, repositories repos WHERE recs.repository_id = repos.repository_id AND recs.pub_date != ''"""
+    records_sql = """SELECT recs.record_id, recs.title, recs.title_fr, recs.pub_date, recs.series, recs.source_url, 
+        recs.item_url, recs.deleted, recs.local_identifier, recs.modified_timestamp, repos.repository_url, 
+        repos.repository_name, repos.repository_thumbnail, repos.item_url_pattern, repos.last_crawl_timestamp, 
+        repos.homepage_url, repos.repo_oai_name, count(*) OVER() AS full_count FROM records recs, repositories repos 
+        WHERE recs.repository_id = repos.repository_id AND recs.deleted!=1 AND recs.item_url!='' AND 
+        recs.pub_date != ''"""
     if set is not None and set != 'openaire_data':
         records_sql = records_sql + " AND (repos.repo_oai_name='" + set + "')"
     if from_datetime is not None:

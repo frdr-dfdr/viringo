@@ -44,11 +44,18 @@ def oai_dc_writer(element: etree.Element, metadata):
         ]:
         for value in _map.get(name, []):
             if value:
-                if isinstance(value, list) and len(value) == 1:
-                    value = value[0]
+                if isinstance(value, list):
+                    if len(value) == 1:
+                        value = value[0]
+                    else:
+                        value = str(value)
                 new_element = etree.SubElement(e_dc, nsdc(name))
-                if value is not None:
-                    new_element.text = ftfy.fix_text(value)
+                if isinstance(value, str):
+                    try:
+                        value = value.replace('\x0c', " ")
+                        new_element.text = ftfy.fix_text(value)
+                    except:
+                        new_element.text = ''
                 else:
                     new_element.text = ''
 
@@ -66,7 +73,10 @@ def oai_datacite_writer(element: etree.Element, metadata):
     _map = metadata.getMap()
     raw_xml = _map.get('xml', '')
 
-    xml_resource_element = etree.fromstring(raw_xml)
+    try:
+        xml_resource_element = etree.fromstring(raw_xml)
+    except:
+        print(raw_xml)
 
     e_oai_datacite = etree.SubElement(
         element, "oai_datacite", {'xmlns': 'http://schema.datacite.org/oai/oai-1.1/'},
