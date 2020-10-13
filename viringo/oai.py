@@ -150,7 +150,7 @@ def index():
     dom = minidom.parseString(xml)
     process_instruction = dom.createProcessingInstruction(
         'xml-stylesheet',
-        'type="text/xsl" href="/static/oaitohtml.xsl"'
+        'type="text/xsl" href="/viringo/static/oaitohtml.xsl"'
     )
     root = dom.firstChild
     dom.insertBefore(process_instruction, root)

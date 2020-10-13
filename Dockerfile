@@ -1,5 +1,5 @@
 
-FROM phusion/passenger-full:1.0.6
+FROM phusion/passenger-full:1.0.11
 
 # Use baseimage-docker's init process.
 CMD ["/sbin/my_init"]
@@ -13,8 +13,7 @@ ADD "https://bootstrap.pypa.io/get-pip.py" /tmp/get-pip.py
 RUN python3 /tmp/get-pip.py
 
 # Fetch pipenv install script and run
-ADD "https://raw.githubusercontent.com/kennethreitz/pipenv/master/get-pipenv.py" /tmp/get-pipenv.py
-RUN python3 /tmp/get-pipenv.py
+RUN pip install pipenv
 
 # Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

@@ -1,0 +1,18 @@
+# Tags in this file MUST match GitLab runner configured tags else the jobs will not run.
+default:
+  image: docker
+  #tags?
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERT_DIR: ""
+  
+services:
+  - docker:19.03.12-dind
+
+before_script:
+  - docker info
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+script:
+  - echo "GitLab Viringo Docker image build steps"
+
