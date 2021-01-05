@@ -1,7 +1,7 @@
 # Tags in this file MUST match GitLab runner configured tags else the jobs will not run.
 default:
   image: docker
-  tags: [arbutus]
+  tags: [testing]
 
 stages:
   - build
