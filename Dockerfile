@@ -1,12 +1,12 @@
 
-FROM phusion/passenger-full:1.0.11
+FROM phusion/passenger-full:2.1.0
 
 # Use baseimage-docker's init process.
 CMD ["/sbin/my_init"]
 
 # Update installed APT packages
 RUN apt-get update && apt-get upgrade -y -o Dpkg::Options::="--force-confold" && \
-    apt-get install -y ntp pandoc
+    apt-get install -y ntp pandoc python3-distutils
 
 # Fetch PIP install script and run
 ADD "https://bootstrap.pypa.io/get-pip.py" /tmp/get-pip.py
@@ -14,6 +14,8 @@ RUN python3 /tmp/get-pip.py
 
 # Fetch pipenv install script and run
 RUN pip install pipenv
+#ADD "https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py" /tmp/get-pipenv.py
+#RUN python3 /tmp/get-pipenv.py
 
 # Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
