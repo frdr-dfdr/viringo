@@ -1,12 +1,13 @@
 
-FROM phusion/passenger-full:1.0.19
+#FROM phusion/passenger-full:2.1.0
+FROM phusion/passenger-customizable:2.1.0
 
 # Use baseimage-docker's init process.
 CMD ["/sbin/my_init"]
 
 # Update installed APT packages
 RUN apt-get update && apt-get upgrade -y -o Dpkg::Options::="--force-confold" && \
-    apt-get install -y ntp pandoc python3-distutils
+    apt-get install -y ntp pandoc python3.5 python3-distutils
 
 # Fetch PIP install script and run
 ADD "https://bootstrap.pypa.io/get-pip.py" /tmp/get-pip.py
