@@ -1,5 +1,5 @@
 
-FROM phusion/passenger-full:2.1.0
+FROM phusion/passenger-full:1.0.19
 
 # Use baseimage-docker's init process.
 CMD ["/sbin/my_init"]
