@@ -1,0 +1,15 @@
+blinker
+Flask
+Flask-SQLAlchemy
+ftfy
+gunicorn
+pyoai
+psycopg2-binary
+requests
+python-dateutil
+lxml
+factory-boy
+json_log_formatter
+sentry-sdk 
+python-dotenv
+

@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.7
 
 
 # Update installed APT packages
@@ -28,13 +28,15 @@ WORKDIR /usr/src/viringo
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+ENV FLASK_APP=__init__.py
+
 # install dependencies
 RUN pip install --upgrade pip
 COPY ./requirements.txt /usr/src/viringo/requirements.txt
 RUN pip install -r requirements.txt
 
 # Copy webapp folder
-COPY ./viringo /usr/src/viringo
+COPY . /usr/src/viringo/
 
 # Copy tests over to app folder
 #COPY tests /home/app/tests
@@ -65,3 +67,4 @@ COPY ./viringo /usr/src/viringo
 # Expose web
 EXPOSE 5000
 
+CMD ["flask","run","-h", "0.0.0.0"]

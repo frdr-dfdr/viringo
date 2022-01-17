@@ -2,10 +2,14 @@ version: '3'
 
 services:
   web:
-    image: git.computecanada.ca:4567/frdr/viringo:latest
+    build: 
+      context: ./viringo 
+        #command: gunicorn --bind 0.0.0.0:5000 manage:app 
+    command: python manage.py run -h 0.0.0.0
+      #image: git.computecanada.ca:4567/frdr/viringo:latest
     ports:
-      - "8091:80"
-    volumes:
-      - ./:/home/app/webapp/
+      - "5000:5000"
+        #volumes:
+        #  - /:/usr/src/app/
     env_file:
       - viringo.env
