@@ -1,10 +1,12 @@
 FROM python:3.6
 
+#FROM phusion/passenger-full:2.1.0
+
+# Use baseimage-docker's init process.
 
 # Update installed APT packages
 RUN apt-get update && apt-get upgrade -y -o Dpkg::Options::="--force-confold" && \
-    apt-get install -y ntp pandoc
-
+    apt-get install -y ntp pandoc python3.5 python3-distutils
 
 # Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
