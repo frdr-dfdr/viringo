@@ -1,15 +1,38 @@
 version: '3'
+######################################################################
+# docker-compose config for local development only
+######################################################################
+  #volumes:
+  #  db_data_vol:
 
 services:
   web:
-    build: 
-      context: ./viringo 
-        #command: gunicorn --bind 0.0.0.0:5000 manage:app 
-    command: python manage.py run -h 0.0.0.0
-      #image: git.computecanada.ca:4567/frdr/viringo:latest
+    image: viringo
+    command: ["gunicorn","-b", "0.0.0.0:5000", "wsgi:application"]
     ports:
       - "5000:5000"
-        #volumes:
-        #  - /:/usr/src/app/
     env_file:
       - viringo.env
+  
+  proxy:
+    image: nginx
+    volumes:
+      - ./nginx/viringo.conf:/etc/nginx/conf.d/default.conf
+      - ./viringo/static/:/usr/share/nginx/html/viringo/public/
+    ports:
+      - "80:80"
+
+######################################################################
+# If you want to use a local dev db, seed this with an SQL dump of
+# a live harvest db instance.
+######################################################################
+#  db:
+#    image: postgres:14
+#    environment:
+#      POSTGRES_USER: harvest
+#      POSTGRES_PASSWORD: harvest
+#      POSTGRES_DB: harvest
+#    volumes:
+#      - ./psql_dumps/seed_data.sql:/docker-entrypoint-initdb.d/init-db.sql
+#    ports:
+#      - "5432:5432"
