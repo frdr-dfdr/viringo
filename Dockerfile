@@ -22,7 +22,7 @@ COPY ./viringo/requirements.txt /usr/src/app/viringo/requirements.txt
 RUN pip install -r requirements.txt
 
 # Copy webapp folder
-COPY . /usr/src/app/viringo/
+COPY . /viringo /usr/src/app/viringo/
 
 # Copy wsgi.py outside of app module
 COPY ./viringo/wsgi.py /usr/src/app/wsgi.py
