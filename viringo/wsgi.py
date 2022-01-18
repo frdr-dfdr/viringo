@@ -6,7 +6,7 @@ import logging
 import json_log_formatter
 from dotenv import load_dotenv
 
-from . import create_app
+from viringo import create_app
 
 # load env variables from .env file
 load_dotenv()
