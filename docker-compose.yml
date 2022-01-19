@@ -7,24 +7,44 @@ version: '3'
 
 services:
   web:
+    build:
+      context: .
     image: viringo
-    command: ["gunicorn","-b", "0.0.0.0:5000", "wsgi:application"]
+    command: ["gunicorn","-b", "0.0.0.0:5000", "--log-level=debug", "wsgi:application"]
     ports:
       - "5000:5000"
     env_file:
       - viringo.env
-  
-  proxy:
-    image: nginx
-    volumes:
-      - ./nginx/viringo.conf:/etc/nginx/conf.d/default.conf
-      - ./viringo/static/:/usr/share/nginx/html/viringo/public/
-    ports:
-      - "80:80"
+    labels:
+      - "traefik.http.routers.viringo.rule=PathPrefix(`/viringo`) || PathPrefix(`/oai`) || Path(`/viringo/static/oaitohtml.xsl`)" 
+      - "traefik.http.routers.viringo.entrypoints=web"
+      - "traefik.http.routers.viringo.service=web-viringo"
+      - "traefik.http.middlewares.viringo-stripprefix.stripprefix.prefixes=/viringo"
+      - "traefik.http.routers.viringo.middlewares=viringo-stripprefix@docker"
+      - "traefik.http.services.web-viringo.loadbalancer.server.port=5000"
+
+        #  proxy:
+        #    image: nginx
+        #    volumes:
+        #      - ./nginx/viringo.conf:/etc/nginx/conf.d/default.conf
+        #      - ./viringo/static/:/usr/share/nginx/html/viringo/public/
+        #    ports:
+        #      - "80"
+
+  traefik:
+    image: traefik:v2.2
+    volumes: 
+      - /var/run/docker.sock:/var/run/docker.sock:ro 
+      - ./traefik/traefik.toml:/traefik.toml 
+      - ./traefik/conf/:/opt/traefik/conf/
+    ports: 
+      - "80:80" 
+      - "8080:8080" 
+      
 
 ######################################################################
 # If you want to use a local dev db, seed this with an SQL dump of
-# a live harvest db instance.
+# a live harvest db instance, and add DB config values to viringo.env
 ######################################################################
 #  db:
 #    image: postgres:14

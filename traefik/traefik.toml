@@ -1,0 +1,23 @@
+[log]
+  level= 'DEBUG'
+
+[accessLog]
+  format = "json"
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+    [entryPoints.web.forwardedHeaders]
+      trustedIPs = ["127.0.0.1, 0.0.0.0"]
+
+[providers]
+  [providers.file]
+    directory = "/opt/traefik/conf"
+    watch = true
+    
+  [providers.docker]
+    network = "web"
+
+[api]
+  dashboard = true
+  insecure = true
