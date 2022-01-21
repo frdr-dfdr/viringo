@@ -44,7 +44,7 @@ services:
 
 ######################################################################
 # If you want to use a local dev db, seed this with an SQL dump of
-# a live harvest db instance, and add DB config values to viringo.env
+# a live harvest db instance.
 ######################################################################
 #  db:
 #    image: postgres:14
