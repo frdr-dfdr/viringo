@@ -382,9 +382,9 @@ def assemble_record(record, db, user, password, server, port):
                 record["datacite_geoLocation"]["geoLocationPoint"].append({"pointLatitude": geopoint["lat"],
                                                             "pointLongitude": geopoint["lon"]})
 
-        lookup_cur.execute("""SELECT geoplace.country, geoplace.province_state, geoplace.city, geoplace.other, geoplace.place_name
-                           FROM geoplace JOIN records_x_geoplace on records_x_geoplace.geoplace_id = geoplace.geoplace_id
-                           WHERE records_x_geoplace.record_uuid=%s""", [record["record_uuid"]])
+        lookup_cur.execute("""SELECT country, province_state, city, other, place_name
+                           FROM geoplace
+                           WHERE record_uuid=%s""", [record["record_uuid"]])
         geoplaces = lookup_cur.fetchall()
         if len(geoplaces) > 0:
             record["datacite_geoLocation"]["geoLocationPlace"] = []
